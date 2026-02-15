@@ -1,0 +1,88 @@
+{
+  "pipeline_version": "1.0.0",
+  "configuration": {
+    "outlier_strategy": "clip",
+    "iqr_multiplier": 1.5,
+    "skewness_threshold": 0.5,
+    "remove_duplicates": true,
+    "normalize_strings": true
+  },
+  "summary_metrics": {
+    "original_rows": 25,
+    "cleaned_rows": 23,
+    "original_columns": 8,
+    "missing_values_imputed": 7,
+    "duplicates_removed": 2,
+    "outliers_detected": 5,
+    "outliers_handled": 5,
+    "completeness_score_before": 96.5,
+    "completeness_score_after": 100.0,
+    "uniqueness_score_before": 92.0,
+    "uniqueness_score_after": 100.0,
+    "overall_health_score_before": 75.85,
+    "overall_health_score_after": 100.0
+  },
+  "operations_applied": [
+    {
+      "operation": "Deduplication",
+      "records_removed": 2,
+      "strategy": "drop_duplicates"
+    },
+    {
+      "column": "age",
+      "operation": "Missing Value Imputation",
+      "method": "mean (skewness=0.23)",
+      "imputed_value": 38.0952,
+      "count": 2
+    },
+    {
+      "column": "annual_income",
+      "operation": "Missing Value Imputation",
+      "method": "median (skewness=4.25)",
+      "imputed_value": 73000.0,
+      "count": 2
+    },
+    {
+      "column": "credit_score",
+      "operation": "Missing Value Imputation",
+      "method": "mean (skewness=-0.01)",
+      "imputed_value": 695.4762,
+      "count": 2
+    },
+    {
+      "column": "account_status",
+      "operation": "Categorical Imputation",
+      "method": "mode",
+      "imputed_value": "Active",
+      "count": 1
+    },
+    {
+      "column": "annual_income",
+      "operation": "Outlier Detection & Resolution",
+      "method": "IQR Tukey Fence",
+      "q1": 60000.0,
+      "q3": 95000.0,
+      "iqr": 35000.0,
+      "bounds": [
+        7500.0,
+        147500.0
+      ],
+      "outliers_found": 1,
+      "action_taken": "clipped_to_iqr_bounds"
+    },
+    {
+      "column": "transaction_amount",
+      "operation": "Outlier Detection & Resolution",
+      "method": "IQR Tukey Fence",
+      "q1": 95.25,
+      "q3": 1370.0,
+      "iqr": 1274.75,
+      "bounds": [
+        -1816.875,
+        3282.125
+      ],
+      "outliers_found": 4,
+      "action_taken": "clipped_to_iqr_bounds"
+    }
+  ]
+}

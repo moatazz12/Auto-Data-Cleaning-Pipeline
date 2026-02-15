@@ -1,0 +1,68 @@
+<!-- Layout Shell -->
+<div class="app-shell" [class.sidebar-closed]="!isSidebarOpen">
+
+  <!-- ═══ SIDEBAR ═══════════════════════════════════════════════════════ -->
+  <aside class="sidebar" [class.open]="isSidebarOpen">
+    <div class="sidebar-header">
+      <span class="sidebar-logo">
+        <span class="material-symbols-rounded sz-28"
+          style="color:#4f46e5;font-variation-settings:'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24">biotech</span>
+      </span>
+      <span class="sidebar-title" *ngIf="isSidebarOpen">DataHealthCheck</span>
+      
+      <!-- Bouton de fermeture mobile — visible uniquement sur petit écran -->
+      <button class="sidebar-close-btn" (click)="toggleSidebar()" *ngIf="isSidebarOpen">
+        <span class="material-symbols-rounded">close</span>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- On ferme la sidebar après un clic sur un lien si on est sur mobile -->
+      <a class="nav-item" routerLink="/dashboard" routerLinkActive="active" title="Dashboard" (click)="closeSidebarOnMobile()">
+        <span class="material-symbols-rounded nav-icon">dashboard</span>
+        <span class="nav-label" *ngIf="isSidebarOpen">Dashboard</span>
+      </a>
+      <a class="nav-item" routerLink="/workspaces" routerLinkActive="active" title="Workspaces" (click)="closeSidebarOnMobile()">
+        <span class="material-symbols-rounded nav-icon">folder_open</span>
+        <span class="nav-label" *ngIf="isSidebarOpen">Workspaces</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Overlay (Backdrop) — Ferme la sidebar au clic extérieur sur mobile -->
+  <div class="sidebar-overlay" *ngIf="isSidebarOpen" (click)="toggleSidebar()"></div>
+  <!-- ═══ FIN SIDEBAR ══════════════════════════════════════════════════ -->
+
+  <!-- ═══ CONTENU PRINCIPAL ════════════════════════════════════════════ -->
+  <div class="main-wrapper">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <button class="menu-toggle" (click)="toggleSidebar()" aria-label="Toggle menu">
+        <span class="material-symbols-rounded" style="font-size:22px">menu</span>
+      </button>
+
+      <span class="topbar-brand">DataHealthCheck</span>
+
+      <div class="topbar-spacer"></div>
+
+      <!-- User zone -->
+      <div class="topbar-user">
+        <span class="user-avatar">{{ userDisplayName.charAt(0).toUpperCase() }}</span>
+        <span class="user-name">{{ userDisplayName }}</span>
+        <button class="logout-btn" (click)="logout()" title="Sign Out">
+          <span class="material-symbols-rounded sz-18">logout</span>
+          <span>Logout</span>
+        </button>
+      </div>
+    </header>
+    <!-- ═══ FIN TOPBAR ════════════════════════════════════════════════ -->
+
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
+  <!-- ═══ FIN CONTENU PRINCIPAL ════════════════════════════════════════ -->
+
+</div>

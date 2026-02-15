@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36511.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataHealthCheck", "DataHealthCheck\DataHealthCheck.csproj", "{EDCCC856-7B59-445C-B0FA-FF9B7033B367}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Metiers", "Metiers\Metiers.csproj", "{CDB580BE-DDF2-456C-A990-01AA654341CD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EDCCC856-7B59-445C-B0FA-FF9B7033B367}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDCCC856-7B59-445C-B0FA-FF9B7033B367}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDCCC856-7B59-445C-B0FA-FF9B7033B367}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDCCC856-7B59-445C-B0FA-FF9B7033B367}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CDB580BE-DDF2-456C-A990-01AA654341CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDB580BE-DDF2-456C-A990-01AA654341CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDB580BE-DDF2-456C-A990-01AA654341CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDB580BE-DDF2-456C-A990-01AA654341CD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5BF49679-0675-4DA9-A89C-89106E04B141}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,539 @@
+<div class="detail-page">
+  <div class="workspace-detail-container">
+    <!-- HERO HEADER -->
+    <header class="hero">
+      <div class="hero-content">
+        <div class="hero-text">
+          <h1 class="hero-title">
+            <span class="greeting">Hello {{ userDisplayName }}</span>
+            <span class="material-symbols-rounded sz-28"
+              style="color:#4f46e5;font-variation-settings:'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 28">waving_hand</span>
+          </h1>
+          <p class="subtitle">
+            <span class="subtitle-icon-badge">
+              <span class="material-symbols-rounded sz-18"
+                style="color:#4f46e5;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 18">folder_open</span>
+              <span class="subtitle-text">Managing the <strong>{{ workspace?.name }}</strong> workspace</span>
+            </span>
+          </p>
+        </div>
+        <div class="hero-actions">
+          <div class="hero-stats">
+            <div class="stat-item">
+              <span class="stat-value">{{ sessions.length }}</span>
+              <span class="stat-label">Analysis Session{{ sessions.length > 1 ? "s" : "" }}</span>
+            </div>
+          </div>
+          <button class="back-btn" (click)="goBack()" aria-label="Back to workspaces">
+            <span class="back-icon">←</span>
+            <span class="back-text">Back to workspaces</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- SESSIONS SECTION (No more top-level score cards as per screenshot) -->
+    <section class="sessions-section">
+      <div class="section-heading">
+        <div>
+          <h3>Analysis sessions</h3>
+          <p class="muted">
+            Upload your CSVs and manage every analysis from here.
+          </p>
+        </div>
+        <button *ngIf="canEdit()" class="action-btn upload-btn" (click)="onUploadData()">
+          <span class="material-symbols-rounded sz-18">upload</span>
+          <span>Upload data</span>
+        </button>
+      </div>
+
+      <div class="table-wrapper" *ngIf="sessions.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Session</th>
+              <th>Original file</th>
+              <th>Rows</th>
+              <th>Columns</th>
+              <th>Uploaded at</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of sessions">
+              <td class="semi-bold">{{ s.sessionName }}</td>
+              <td class="muted">{{ s.originalFileName }}</td>
+              <td>{{ s.rowCount }}</td>
+              <td>{{ s.columnCount }}</td>
+              <td>{{ s.uploadDate | date: "dd/MM/yyyy HH:mm" }}</td>
+              <td class="actions-cell">
+                <button class="cell-btn stats-btn" title="View Metrics" (click)="viewMetrics(s)">
+                  <span class="material-symbols-rounded sz-16" style="font-variation-settings:'FILL' 1">bar_chart</span>
+                </button>
+                <button class="cell-btn" [ngClass]="getReportActionClass()" [title]="getReportActionTitle()"
+                  (click)="cleanData(s)">
+                  <span class="material-symbols-rounded sz-16" style="font-variation-settings:'FILL' 1">{{
+                    getReportActionIcon() }}</span>
+                </button>
+                <button class="cell-btn delete-btn" [disabled]="!canEdit()"
+                  [title]="canEdit() ? 'Delete Session' : 'Viewer cannot delete sessions'" (click)="deleteSession(s)">
+                  <span class="material-symbols-rounded sz-16"
+                    style="font-variation-settings:'FILL' 1">delete_forever</span>
+                </button>
+                <button class="cell-btn rename-btn" [disabled]="!canEdit()"
+                  [title]="canEdit() ? 'Rename Session' : 'Viewer cannot rename sessions'" (click)="renameSession(s)">
+                  <span class="material-symbols-rounded sz-16" style="font-variation-settings:'FILL' 1">edit</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" *ngIf="!isLoading && sessions.length === 0">
+        <div class="empty-icon">📂</div>
+        <p>No analysis sessions yet for this workspace.</p>
+        <button *ngIf="canEdit()" class="upload-btn primary" (click)="onUploadData()">
+          Upload your first CSV
+        </button>
+      </div>
+    </section>
+
+    <!-- MEMBERS SECTION -->
+    <section *ngIf="isOwner()" class="members-section">
+      <div class="section-heading">
+        <div>
+          <h3>Workspace members</h3>
+          <p class="muted">Manage who can collaborate on this workspace.</p>
+        </div>
+        <button class="action-btn invite-btn" (click)="onInviteMember()">
+          <span class="material-symbols-rounded sz-18">person_add</span>
+          <span>Invite member</span>
+        </button>
+      </div>
+
+      <div class="table-wrapper" *ngIf="members.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Role</th>
+              <th>Joined</th>
+              <th class="text-right"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let m of members">
+              <td class="user-cell">
+                <div class="user-avatar">
+                  {{ m.userName.charAt(0).toUpperCase() }}
+                </div>
+                <span>{{ m.userName }}</span>
+              </td>
+              <td>
+                <span class="role-badge" [class]="m.role.toLowerCase()">{{
+                  m.role
+                  }}</span>
+              </td>
+              <td>{{ m.joinedAt | date: "dd/MM/yyyy HH:mm" }}</td>
+              <td class="text-right">
+                <button *ngIf="m.role !== 'Owner' && isOwner()" class="ghost-btn icon-only" title="Remove Member"
+                  (click)="onRemoveMember(m)">
+                  <span class="material-symbols-rounded sz-16">person_remove</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CLEAN DATA MODAL -->
+    <div class="modal-overlay modern-modal" *ngIf="showCleanModal" (click)="cancelClean()">
+      <div class="modal-content modern-modal-content clean-modal" (click)="$event.stopPropagation()">
+        <div class="modern-modal-header">
+          <div class="modal-icon clean-icon">
+            <span class="material-symbols-rounded"
+              style="font-size:24px;color:#fff;font-variation-settings:'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24">auto_awesome</span>
+          </div>
+          <div>
+            <h2>Clean Dataset</h2>
+            <p class="modal-subtitle">Process and clean your data</p>
+          </div>
+          <button class="modal-close" (click)="cancelClean()" aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <div class="modern-modal-body">
+          <p class="info-text">
+            This will process your dataset, remove duplicates, handle missing
+            values, and fix formatting issues using ML.NET.
+          </p>
+          <div class="form-group modern-form">
+            <label for="clean-name">Cleaned Dataset Name</label>
+            <input id="clean-name" type="text" class="form-input" [(ngModel)]="cleaningName"
+              placeholder="e.g. Cleaned - Customer Data" [disabled]="isCleaning" />
+            <small class="form-hint">Choose a descriptive name for your cleaned dataset</small>
+          </div>
+          <div *ngIf="cleanError" class="error-banner">
+            {{ cleanError }}
+          </div>
+          <div *ngIf="isCleaning" class="loading-state-overlay glass-overlay">
+            <div class="loading-content">
+              <div class="spinner"></div>
+              <div class="loading-text-group">
+                <span class="loading-title">Cleaning your data...</span>
+                <span class="loading-subtitle">Applying ML filters & fixing formats</span>
+              </div>
+              <div class="loading-progress-container">
+                <div class="loading-progress-bar"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modern-modal-footer">
+          <button class="btn btn-secondary" (click)="cancelClean()" [disabled]="isCleaning">
+            Cancel
+          </button>
+          <button class="btn btn-primary" (click)="confirmClean()" [disabled]="isCleaning || !cleaningName">
+            <span *ngIf="!isCleaning">Start Cleaning</span>
+            <span *ngIf="isCleaning">Processing...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPLOAD DATA MODAL -->
+    <div class="modal-overlay modern-modal" *ngIf="showUploadModal" (click)="cancelUpload()">
+      <div class="modal-content modern-modal-content upload-modal" (click)="$event.stopPropagation()">
+        <div class="modern-modal-header">
+          <div class="modal-icon upload-icon">
+            <span class="material-symbols-rounded sz-28" style="color:#fff">upload</span>
+          </div>
+          <div>
+            <h2>Upload New Analysis</h2>
+            <p class="modal-subtitle">Add a CSV file to your workspace</p>
+          </div>
+          <button class="modal-close" (click)="cancelUpload()" aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <div class="modern-modal-body">
+          <div class="form-group modern-form">
+            <label for="upload-name">Analysis Session Name</label>
+            <input id="upload-name" type="text" class="form-input" [(ngModel)]="uploadSessionName"
+              placeholder="e.g. Sales Report Q1" [disabled]="isUploading" />
+          </div>
+
+          <div class="file-drop-zone" [class.has-file]="selectedFile" (click)="fileInput.click()">
+            <input type="file" #fileInput (change)="onFileSelected($event)" accept=".csv" style="display: none" />
+            <div class="drop-zone-content">
+              <span class="material-symbols-rounded sz-32"
+                style="color:var(--primary);margin-bottom:12px">description</span>
+              <p *ngIf="!selectedFile">
+                Click or drag a <strong>CSV file</strong> here to upload
+              </p>
+              <div *ngIf="selectedFile" class="selected-file-info">
+                <span class="file-name">{{ selectedFile.name }}</span>
+                <span class="file-size">{{ (selectedFile.size / 1024).toFixed(1) }} KB</span>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="uploadError" class="error-banner">
+            {{ uploadError }}
+          </div>
+        </div>
+        <div class="modern-modal-footer">
+          <button class="btn btn-secondary" (click)="cancelUpload()" [disabled]="isUploading">
+            Cancel
+          </button>
+          <button class="btn btn-primary" (click)="confirmUpload()"
+            [disabled]="isUploading || !selectedFile || !uploadSessionName">
+            <span *ngIf="!isUploading">Upload & Analyze</span>
+            <span *ngIf="isUploading">Uploading...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE SESSION MODAL -->
+    <div class="modal-overlay modern-modal" *ngIf="showDeleteModal" (click)="cancelDelete()">
+      <div class="modal-content modern-modal-content delete-modal" (click)="$event.stopPropagation()">
+        <div class="modern-modal-header">
+          <div class="modal-icon delete-icon">
+            <span class="material-symbols-rounded sz-28"
+              style="color:#fff;font-variation-settings:'FILL' 1,'wght' 600">delete_forever</span>
+          </div>
+          <div>
+            <h2>Delete Analysis Session</h2>
+            <p class="modal-subtitle">This action cannot be undone</p>
+          </div>
+          <button class="modal-close" (click)="cancelDelete()" aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <div class="modern-modal-body">
+          <p class="warning-text">
+            Are you sure you want to delete this analysis session? All
+            associated data will be permanently removed from the workspace.
+          </p>
+          <div *ngIf="deleteError" class="error-banner">
+            {{ deleteError }}
+          </div>
+        </div>
+        <div class="modern-modal-footer">
+          <button class="btn btn-secondary" (click)="cancelDelete()" [disabled]="isDeleting">
+            Cancel
+          </button>
+          <button class="btn btn-danger" (click)="confirmDelete()" [disabled]="isDeleting">
+            <span *ngIf="!isDeleting">Delete Session</span>
+            <span *ngIf="isDeleting">Deleting...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVITE MEMBER MODAL -->
+    <div class="modal-overlay modern-modal" *ngIf="showInviteModal" (click)="cancelInvite()">
+      <div class="modal-content modern-modal-content invite-modal" (click)="$event.stopPropagation()">
+        <div class="modern-modal-header">
+          <div class="modal-icon invite-icon">
+            <span class="material-symbols-rounded sz-28"
+              style="color:#fff;font-variation-settings:'FILL' 1,'wght' 600">person_add</span>
+          </div>
+          <div>
+            <h2>Invite New Member</h2>
+            <p class="modal-subtitle">Add a collaborator to this workspace</p>
+          </div>
+          <button class="modal-close" (click)="cancelInvite()" aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <div class="modern-modal-body">
+          <div class="form-group modern-form search-group">
+            <label for="invite-search">Username</label>
+            <div class="search-input-wrapper">
+              <input id="invite-search" type="text" class="form-input" [(ngModel)]="inviteSearch"
+                (input)="onInviteSearchChange()" placeholder="Search registered usernames..." [disabled]="isInviting"
+                autocomplete="off" />
+              <div class="search-results" *ngIf="filteredUsers.length > 0">
+                <div class="search-result-item" *ngFor="let user of filteredUsers" (click)="selectInviteUser(user)">
+                  <span class="material-symbols-rounded"
+                    style="color:var(--primary);font-variation-settings:'FILL' 1">person</span>
+                  <div class="user-details">
+                    <span class="username">{{ user.userName }}</span>
+                    <span class="fullname">{{ user.firstName }} {{ user.lastName }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="selectedInviteUser" class="selection-badge">
+              Inviting: <strong>{{ selectedInviteUser.userName }}</strong>
+              <button class="clear-btn" (click)="selectedInviteUser = null; inviteSearch = ''">
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group modern-form">
+            <label for="invite-role">Role</label>
+            <select id="invite-role" class="form-input" [(ngModel)]="inviteRole" [disabled]="isInviting">
+              <option value="Editor">Editor (Can clean and upload)</option>
+              <option value="Viewer">Viewer (Read-only)</option>
+            </select>
+          </div>
+
+          <div *ngIf="inviteError" class="error-banner">
+            {{ inviteError }}
+          </div>
+        </div>
+        <div class="modern-modal-footer">
+          <button class="btn btn-secondary" (click)="cancelInvite()" [disabled]="isInviting">
+            Cancel
+          </button>
+          <button class="btn btn-primary" (click)="confirmInvite()" [disabled]="isInviting || !selectedInviteUser">
+            <span *ngIf="!isInviting">Send Invitation</span>
+            <span *ngIf="isInviting">Sending...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REMOVE MEMBER MODAL -->
+    <div class="modal-overlay modern-modal" *ngIf="showRemoveMemberModal" (click)="cancelRemoveMember()">
+      <div class="modal-content modern-modal-content delete-modal" (click)="$event.stopPropagation()">
+        <div class="modern-modal-header">
+          <div class="modal-icon delete-icon">
+            <span class="material-symbols-rounded sz-28"
+              style="color:#fff;font-variation-settings:'FILL' 1,'wght' 600">person_remove</span>
+          </div>
+          <div>
+            <h2>Remove Member</h2>
+            <p class="modal-subtitle">Workspace Access Management</p>
+          </div>
+          <button class="modal-close" (click)="cancelRemoveMember()" aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <div class="modern-modal-body">
+          <p class="warning-text">
+            Are you sure you want to remove
+            <strong>{{ removingMemberName }}</strong> from this workspace?
+          </p>
+          <p class="info-text">
+            They will lose all permissions for data cleaning and metrics
+            analysis in this workspace.
+          </p>
+
+          <div *ngIf="removeMemberError" class="error-banner">
+            {{ removeMemberError }}
+          </div>
+        </div>
+        <div class="modern-modal-footer">
+          <button class="btn btn-secondary" (click)="cancelRemoveMember()" [disabled]="isRemovingMember">
+            Cancel
+          </button>
+          <button class="btn btn-danger" (click)="confirmRemoveMember()" [disabled]="isRemovingMember">
+            <span *ngIf="!isRemovingMember">Remove Access</span>
+            <span *ngIf="isRemovingMember">Removing...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- METRICS MODAL -->
+    <div class="modal-overlay modern-modal" *ngIf="showMetricsModal" (click)="closeMetricsModal()">
+      <div class="modal-content modern-modal-content metrics-modal" (click)="$event.stopPropagation()">
+        <div class="modern-modal-header">
+          <div class="modal-icon metrics-icon">
+            <span class="material-symbols-rounded sz-28" style="color:#fff">bar_chart</span>
+          </div>
+          <div>
+            <h2>Data Quality Metrics</h2>
+            <p class="modal-subtitle">
+              Before cleaning - {{ metricsSessionTitle }}
+            </p>
+          </div>
+          <button class="modal-close" (click)="closeMetricsModal()" aria-label="Close">
+            ✕
+          </button>
+        </div>
+
+        <div class="modern-modal-body">
+          <div *ngIf="isLoadingMetrics" class="loading-state">
+            <div class="spinner-large"></div>
+            <span>Analyzing data quality...</span>
+          </div>
+
+          <div *ngIf="metricsError" class="error-banner">
+            {{ metricsError }}
+          </div>
+
+          <div class="table-wrapper" *ngIf="!isLoadingMetrics && selectedSessionMetrics.length > 0">
+            <table class="metrics-table">
+              <thead>
+                <tr>
+                  <th>Column</th>
+                  <th>Type</th>
+                  <th>Total</th>
+                  <th>Missing</th>
+                  <th>Unique</th>
+                  <th>Duplicates</th>
+                  <th>Quality Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let m of selectedSessionMetrics">
+                  <td>
+                    <strong>{{ m.columnName }}</strong>
+                  </td>
+                  <td>
+                    <span class="badge badge-type">{{ m.dataType }}</span>
+                  </td>
+                  <td>{{ m.totalValues }}</td>
+                  <td>
+                    <span class="badge" [class.badge-warning]="m.missingValues > 0"
+                      [class.badge-success]="m.missingValues === 0">
+                      {{ m.missingValues }}
+                    </span>
+                  </td>
+                  <td>{{ m.uniqueValues }}</td>
+                  <td>
+                    <span class="badge" [class.badge-warning]="m.duplicateValues > 0"
+                      [class.badge-success]="m.duplicateValues === 0">
+                      {{ m.duplicateValues }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="quality-score-container">
+                      <div class="score-bar">
+                        <div class="score-fill" [style.width.%]="m.qualityScore * 100"></div>
+                      </div>
+                      <span class="score-value">{{
+                        m.qualityScore | percent: "1.0-0"
+                        }}</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div *ngIf="
+              !isLoadingMetrics &&
+              !metricsError &&
+              selectedSessionMetrics.length === 0
+            " class="empty-state-compact">
+            No metrics available for this session.
+          </div>
+        </div>
+
+        <div class="modern-modal-footer">
+          <button class="btn btn-secondary" (click)="closeMetricsModal()">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RENAME SESSION MODAL -->
+  <div class="modal-overlay modern-modal" *ngIf="showRenameModal" (click)="cancelRename()">
+    <div class="modal-content modern-modal-content upload-modal" (click)="$event.stopPropagation()">
+      <div class="modern-modal-header">
+        <div class="modal-icon"
+          style="background:var(--primary);width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center">
+          <span class="material-symbols-rounded" style="color:#fff;font-size:24px">edit</span>
+        </div>
+        <div>
+          <h2>Rename Session</h2>
+          <p class="modal-subtitle">Update the analysis session name</p>
+        </div>
+        <button class="modal-close" (click)="cancelRename()" aria-label="Close">
+          ✕
+        </button>
+      </div>
+      <div class="modern-modal-body">
+        <div class="form-group modern-form">
+          <label for="rename-name">New Session Name</label>
+          <input id="rename-name" type="text" class="form-input" [(ngModel)]="renameValue"
+            placeholder="e.g. Sales Report Q2" [disabled]="isRenaming" />
+        </div>
+        <div *ngIf="renameError" class="error-banner">
+          {{ renameError }}
+        </div>
+      </div>
+      <div class="modern-modal-footer">
+        <button class="btn btn-secondary" (click)="cancelRename()" [disabled]="isRenaming">
+          Cancel
+        </button>
+        <button class="btn btn-primary" (click)="confirmRename()" [disabled]="isRenaming || !renameValue.trim()">
+          <span *ngIf="!isRenaming">Save Name</span>
+          <span *ngIf="isRenaming">Saving...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

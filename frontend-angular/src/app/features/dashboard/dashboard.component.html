@@ -1,0 +1,196 @@
+<!-- Main Dashboard -->
+<div class="dashboard-page">
+  <div class="dashboard-container">
+
+    <!-- Dashboard Header -->
+    <header class="dashboard-hero">
+      <div class="hero-content">
+        <div class="hero-text">
+          <h1 class="hero-title">
+            <span class="greeting">Hello {{ userDisplayName }}</span>
+            <span class="material-symbols-rounded sz-32"
+              style="color:#4f46e5;font-variation-settings:'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 32">monitoring</span>
+          </h1>
+          <p class="subtitle">
+            <span class="subtitle-icon-badge">
+              <span class="material-symbols-rounded sz-18" style="color:#4f46e5">waving_hand</span>
+              <span class="subtitle-text">Welcome, {{ userDisplayName }} — Overview of DataHealthCheck</span>
+            </span>
+          </p>
+        </div>
+        <div class="hero-actions">
+          <button class="nav-btn" (click)="goToWorkspaces()">
+            <span class="material-symbols-rounded sz-18">folder_open</span>
+            <span>My Workspaces</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Skeleton Loading -->
+    <div *ngIf="isLoading" class="stats-grid" style="margin-bottom:32px">
+      <div class="skeleton-card" *ngFor="let i of [1,2,3,4]">
+        <div class="skeleton skeleton-line w-40" style="height:36px;margin-bottom:12px"></div>
+        <div class="skeleton skeleton-line w-60"></div>
+      </div>
+    </div>
+
+    <ng-container *ngIf="!isLoading">
+
+      <!-- ═══ SECTION 1 : Stat Cards ═══════════════════════════════════ -->
+      <section class="stats-section">
+        <div class="dashboard-container-title">
+          <h2 class="section-title">
+            <span class="material-symbols-rounded"
+              style="color:#4f46e5;font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24">bar_chart</span>
+            Global Statistics
+          </h2>
+        </div>
+        <div class="stats-grid">
+
+          <div class="stat-card card-blue">
+            <div class="stat-icon">
+              <span class="material-symbols-rounded"
+                style="font-size:32px;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 32">folder_open</span>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value animated-counter">{{ nbWorkspacesDisplay }}</div>
+              <div class="stat-label">Workspaces</div>
+            </div>
+          </div>
+
+          <div class="stat-card card-violet">
+            <div class="stat-icon">
+              <span class="material-symbols-rounded"
+                style="font-size:32px;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 32">analytics</span>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value animated-counter">{{ nbSessionsDisplay }}</div>
+              <div class="stat-label">Analysis Sessions</div>
+            </div>
+          </div>
+
+          <div class="stat-card card-green">
+            <div class="stat-icon">
+              <span class="material-symbols-rounded"
+                style="font-size:32px;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 32">auto_fix_high</span>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value animated-counter">{{ nbCleanedDatasetsDisplay }}</div>
+              <div class="stat-label">Analyzed Data</div>
+            </div>
+          </div>
+
+          <div class="stat-card card-orange">
+            <div class="stat-icon">
+              <span class="material-symbols-rounded"
+                style="font-size:32px;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 32">group</span>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value animated-counter">{{ nbMembersDisplay }}</div>
+              <div class="stat-label">Collaborators</div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══ SECTION 2 : Charts ═══════════════════════════════════════ -->
+      <section class="charts-section">
+        <div class="dashboard-container-title">
+          <h2 class="section-title">
+            <span class="material-symbols-rounded"
+              style="color:#4f46e5;font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24">pie_chart</span>
+            Visualizations
+          </h2>
+        </div>
+        <div class="charts-grid">
+
+          <!-- PIE Chart -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3 class="chart-title">My Workspaces</h3>
+              <p class="chart-subtitle">Owned vs Shared</p>
+            </div>
+            <div class="chart-body">
+              <canvas baseChart [type]="chartTypePie" [datasets]="chartDataPie" [labels]="chartLabelsPie"
+                [options]="chartOptions"></canvas>
+            </div>
+          </div>
+
+          <!-- DOUGHNUT Chart -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3 class="chart-title">Members per Workspace</h3>
+              <p class="chart-subtitle">Top 5 workspaces</p>
+            </div>
+            <div class="chart-body">
+              <canvas baseChart [type]="chartTypeDoughnut" [datasets]="chartDataDoughnut" [labels]="chartLabelsDoughnut"
+                [options]="chartOptions"></canvas>
+            </div>
+          </div>
+
+          <!-- BAR Chart -->
+          <div class="chart-card chart-card-wide">
+            <div class="chart-header">
+              <h3 class="chart-title">Sessions per Workspace</h3>
+              <p class="chart-subtitle">Number of analysis sessions created</p>
+            </div>
+            <div class="chart-body">
+              <canvas baseChart [type]="chartTypeLine" [datasets]="chartDataLine" [labels]="chartLabelsLine"
+                [options]="chartOptions"></canvas>
+            </div>
+          </div>
+
+          <!-- LINE Chart: Data Volume Trend -->
+          <div class="chart-card chart-card-wide">
+            <div class="chart-header">
+              <h3 class="chart-title">
+                <span class="material-symbols-rounded" style="color:#10b981">trending_up</span>
+                Data Volume Trend
+              </h3>
+              <p class="chart-subtitle">Number of rows processed across recent analysis sessions</p>
+            </div>
+            <div class="chart-body">
+              <canvas baseChart [type]="chartTypeActivity" [datasets]="chartDataActivity" [labels]="chartLabelsActivity"
+                [options]="chartOptions"></canvas>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══ SECTION 3 : Recent Workspaces ════════════════════════════ -->
+      <section class="recent-section" *ngIf="workspaces.length > 0">
+        <div class="dashboard-container-title">
+          <h2 class="section-title">
+            <span class="material-symbols-rounded"
+              style="color:#4f46e5;font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24">history</span>
+            Recent Workspaces
+          </h2>
+        </div>
+        <div class="recent-grid">
+          <div class="recent-card" *ngFor="let ws of recentWorkspaces" (click)="goToWorkspaces()">
+            <div class="recent-icon">
+              <span class="material-symbols-rounded"
+                style="font-size:28px;color:#4f46e5;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 28">folder_open</span>
+            </div>
+            <div class="recent-info">
+              <div class="recent-name">{{ ws.name }}</div>
+              <div class="recent-meta">
+                <span class="role-badge" [ngClass]="{
+                    'role-owner': ws.currentUserRole === 'Owner',
+                    'role-editor': ws.currentUserRole === 'Editor',
+                    'role-viewer': ws.currentUserRole === 'Viewer'
+                  }">{{ ws.currentUserRole }}</span>
+                <span class="member-count">{{ ws.members.length || 0 }} member(s)</span>
+              </div>
+            </div>
+            <span class="material-symbols-rounded" style="color:#4f46e5;font-size:18px">chevron_right</span>
+          </div>
+        </div>
+      </section>
+
+    </ng-container>
+  </div>
+</div>

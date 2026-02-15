@@ -1,0 +1,266 @@
+<div class="workspaces-page">
+    <div class="workspaces-container">
+        <header class="workspaces-hero">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">
+                        <span class="greeting">Hello {{ userDisplayName }}</span>
+                        <span class="material-symbols-rounded sz-28"
+                            style="color:#4f46e5;font-variation-settings:'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 28">waving_hand</span>
+                    </h1>
+                    <p class="subtitle">
+                        <span class="subtitle-icon-badge">
+                            <span class="material-symbols-rounded sz-18"
+                                style="color:#4f46e5;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 18">monitoring</span>
+                            <span class="subtitle-text">Overview of your workspaces</span>
+                        </span>
+                    </p>
+                </div>
+                <div class="hero-actions">
+                    <div class="hero-stats" *ngIf="workspaces.length > 0">
+                        <div class="stat-item">
+                            <span class="stat-value">{{ workspaces.length }}</span>
+                            <span class="stat-label">Workspace{{ workspaces.length > 1 ? 's' : '' }}</span>
+                        </div>
+                    </div>
+                    <button class="create-workspace-btn" (click)="createWorkspace()" aria-label="Create workspace">
+                        <span class="material-symbols-rounded sz-18">add</span>
+                        <span class="create-text">Create workspace</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Permission Warning Banner (like Blazor ShowPermissionWarning) -->
+        <div class="permission-banner" *ngIf="permissionWarning" role="alert">
+            <span class="material-symbols-rounded sz-18">warning</span>
+            <span class="permission-text">{{ permissionWarning }}</span>
+            <button class="permission-close" (click)="permissionWarning = ''">
+                <span class="material-symbols-rounded sz-16">close</span>
+            </button>
+        </div>
+
+        <section class="workspaces-toolbar">
+            <div class="search-container">
+                <div class="filter-row">
+                    <div class="filter-buttons-wrapper">
+                        <span class="filter-label">Filter by:</span>
+                        <div class="filter-buttons">
+                            <button class="filter-btn" [class.active]="filterType === FilterType.All"
+                                (click)="setFilterType(FilterType.All)">
+                                <span class="material-symbols-rounded sz-16">apps</span>
+                                <span class="filter-text">All</span>
+                            </button>
+                            <button class="filter-btn" [class.active]="filterType === FilterType.Name"
+                                (click)="setFilterType(FilterType.Name)">
+                                <span class="material-symbols-rounded sz-16">badge</span>
+                                <span class="filter-text">Name</span>
+                            </button>
+                            <button class="filter-btn" [class.active]="filterType === FilterType.Description"
+                                (click)="setFilterType(FilterType.Description)">
+                                <span class="material-symbols-rounded sz-16">description</span>
+                                <span class="filter-text">Description</span>
+                            </button>
+                            <button class="filter-btn" [class.active]="filterType === FilterType.Owner"
+                                (click)="setFilterType(FilterType.Owner)">
+                                <span class="material-symbols-rounded sz-16">person</span>
+                                <span class="filter-text">Owner</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="search-wrapper">
+                        <span class="material-symbols-rounded sz-18"
+                            style="color:#94a3b8;margin-right:8px">search</span>
+                        <input class="search-input" type="text" [(ngModel)]="searchText" (input)="onSearchChange()"
+                            [placeholder]="getSearchPlaceholder()" />
+                        <button class="search-clear" *ngIf="searchText" (click)="clearSearch()"
+                            aria-label="Clear search">
+                            <span class="material-symbols-rounded sz-14">close</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="search-results-info" *ngIf="searchText">
+                    <span class="results-count">{{ filteredWorkspaces.length }}</span>
+                    <span>result{{ filteredWorkspaces.length > 1 ? 's' : '' }} found</span>
+                    <span class="filter-badge" *ngIf="filterType !== FilterType.All">in {{ filterType }}</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="workspaces-content">
+            <div class="workspaces-grid">
+
+                <div class="empty-state" *ngIf="isLoading">Loading workspaces...</div>
+                <div class="empty-state" *ngIf="!isLoading && filteredWorkspaces.length === 0">No workspaces yet. Click
+                    the "+" button to start.</div>
+
+                <div class="workspace-card" *ngFor="let ws of paginatedWorkspaces; let i = index"
+                    [ngClass]="getCardClass((currentPage - 1) * itemsPerPage + i)"
+                    (click)="openWorkspace(ws.id, $event)">
+
+                    <div class="cover">
+                        <span class="folder-icon">
+                            <span class="material-symbols-rounded"
+                                style="font-size:36px;color:rgba(255,255,255,0.9);font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 36">folder_open</span>
+                        </span>
+                        <div class="card-actions">
+                            <button class="action-btn edit-btn" type="button" (click)="openEditModal(ws, $event)"
+                                title="Edit">
+                                <span class="material-symbols-rounded sz-16">edit</span>
+                                <span class="action-tooltip">Edit</span>
+                            </button>
+                            <button class="action-btn delete-btn" type="button" (click)="deleteWorkspace(ws, $event)"
+                                title="Delete">
+                                <span class="material-symbols-rounded sz-16">delete</span>
+                                <span class="action-tooltip">Delete</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="card-title-row">
+                            <div class="card-title">
+                                <span class="shared-icon" *ngIf="getUserRole(ws) !== 'Owner'" title="Shared Workspace">
+                                    <span class="material-symbols-rounded sz-16" style="color:#94a3b8">group</span>
+                                </span>
+                                {{ ws.name }}
+                            </div>
+                            <span class="role-badge"
+                                [ngClass]="{ 'role-owner': getUserRole(ws) === 'Owner', 'role-editor': getUserRole(ws) === 'Editor', 'role-viewer': getUserRole(ws) === 'Viewer' }"
+                                *ngIf="getUserRole(ws)">
+                                {{ getUserRole(ws) }}
+                            </span>
+                        </div>
+                        <div class="card-description">
+                            {{ ws.description || "No description provided." }}
+                        </div>
+                        <div class="card-footer">
+                            <div class="ghost-btn-wrapper">
+                                <button class="ghost-btn" type="button" (click)="$event.stopPropagation()">
+                                    <span class="material-symbols-rounded sz-16">more_horiz</span>
+                                </button>
+                                <div class="card-tooltip">
+                                    <span class="chip" *ngIf="ws.ownerName">
+                                        <span class="material-symbols-rounded sz-14"
+                                            style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 14">person</span>
+                                        {{ ws.ownerName }}
+                                    </span>
+                                    <span class="chip">
+                                        <span class="material-symbols-rounded sz-14">calendar_today</span>
+                                        {{ ws.createdAt | date:'dd/MM/yyyy' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Pagination — like Blazor -->
+            <div class="pagination-container" *ngIf="totalPages > 1">
+                <button class="page-btn prev-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
+                    aria-label="Previous page">
+                    <span class="material-symbols-rounded sz-18">chevron_left</span>
+                </button>
+                <button class="page-btn" *ngFor="let page of pageNumbers" [class.active]="page === currentPage"
+                    (click)="goToPage(page)" [attr.aria-label]="'Page ' + page">{{ page }}</button>
+                <button class="page-btn next-btn" (click)="goToPage(currentPage + 1)"
+                    [disabled]="currentPage === totalPages" aria-label="Next page">
+                    <span class="material-symbols-rounded sz-18">chevron_right</span>
+                </button>
+                <span class="pagination-info">Page {{ currentPage }} / {{ totalPages }}</span>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modals (Create, Edit, Delete) -->
+    <div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Create workspace</h2>
+                <button class="modal-close" (click)="closeCreateModal()" aria-label="Close">
+                    <span class="material-symbols-rounded sz-18">close</span>
+                </button>
+            </div>
+            <form [formGroup]="createForm" (ngSubmit)="createWorkspaceSubmit()">
+                <div class="modal-body">
+                    <div class="form-group text-start">
+                        <label for="create-name">Name</label>
+                        <input id="create-name" class="form-input" type="text" formControlName="name"
+                            placeholder="Workspace name"
+                            [class.is-invalid]="createForm.get('name')?.invalid && createForm.get('name')?.touched" />
+                    </div>
+                    <div class="form-group text-start">
+                        <label for="create-description">Description (optional)</label>
+                        <textarea id="create-description" class="form-textarea" formControlName="description"
+                            placeholder="Workspace description" rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="closeCreateModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" [disabled]="createForm.invalid || isCreating">
+                        <span *ngIf="isCreating">Creating...</span>
+                        <span *ngIf="!isCreating">Create</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Edit workspace</h2>
+                <button class="modal-close" (click)="closeEditModal()" aria-label="Close">
+                    <span class="material-symbols-rounded sz-18">close</span>
+                </button>
+            </div>
+            <form [formGroup]="editForm" (ngSubmit)="saveWorkspaceSubmit()">
+                <div class="modal-body">
+                    <div class="form-group text-start">
+                        <label for="edit-name">Name</label>
+                        <input id="edit-name" class="form-input" type="text" formControlName="name"
+                            placeholder="Workspace name"
+                            [class.is-invalid]="editForm.get('name')?.invalid && editForm.get('name')?.touched" />
+                    </div>
+                    <div class="form-group text-start">
+                        <label for="edit-description">Description</label>
+                        <textarea id="edit-description" class="form-textarea" formControlName="description"
+                            placeholder="Workspace description" rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid || isSaving">
+                        <span *ngIf="isSaving">Saving...</span>
+                        <span *ngIf="!isSaving">Save</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" *ngIf="showDeleteModal && deletingWorkspace" (click)="closeDeleteModal()">
+        <div class="modal-content delete-modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Delete workspace</h2>
+                <button class="modal-close" (click)="closeDeleteModal()" aria-label="Close">
+                    <span class="material-symbols-rounded sz-18">close</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Are you sure you want to delete the workspace <strong>{{ deletingWorkspace.name }}</strong>?</p>
+                <p class="warning-text">This action is irreversible.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" (click)="confirmDelete()" [disabled]="isDeleting">
+                    <span *ngIf="isDeleting">Deleting...</span>
+                    <span *ngIf="!isDeleting">Delete</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

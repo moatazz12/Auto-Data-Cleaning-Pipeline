@@ -1,0 +1,26 @@
+client_id,full_name,age,annual_income,credit_score,transaction_amount,account_status,registration_date
+1001,Alice Johnson,29,58000.0,720,124.50,Active,2023-01-15
+1002,Bob Smith,45,92000.0,680,2450.00,Active,2022-11-20
+1003,Charlie Brown,,45000.0,610,85.20,Pending,2024-03-01
+1004,David Wilson,34,,740,410.00,Active,2021-08-14
+1005,Emma Davis,52,115000.0,810,125000.00,Active,2020-05-19
+1006,Frank Miller,41,67000.0,590,95.00,Inactive,2023-07-22
+1007,Grace Lee,23,38000.0,,15.00,Active,2024-01-10
+1008,Hannah White,38,82000.0,705,320.40,Active,2022-09-05
+1009,Ian Clark,19,21000.0,550,45.00,Pending,2024-02-18
+1010,Julia Adams,61,145000.0,790,5200.00,Active,2019-12-03
+1002,Bob Smith,45,92000.0,680,2450.00,Active,2022-11-20
+1011,Kevin Scott,33,71000.0,660,180.00,,2023-04-11
+1012,Laura Martinez,28,,715,95.50,Active,2023-10-30
+1013,Michael Taylor,49,103000.0,730,95000.00,Active,2021-03-25
+1014,Nina Patel,37,79000.0,695,210.00,Active,2022-06-17
+1015,Oscar Wright,,62000.0,640,115.00,Pending,2023-12-01
+1016,Paula Evans,26,49000.0,,68.00,Active,2024-02-05
+1017,Quinn Roberts,58,132000.0,775,1850.00,Inactive,2020-07-14
+1008,Hannah White,38,82000.0,705,320.40,Active,2022-09-05
+1018,Rachel Green,31,68000.0,710,135.00,Active,2023-05-29
+1019,Steve Rogers,47,98000.0,750,890.00,Active,2021-11-08
+1020,Tony Stark,48,9500000.0,850,550000.00,Active,2018-04-12
+1021,Uma Thurman,43,87000.0,680,310.00,Active,2022-08-21
+1022,Victor Vance,36,73000.0,625,175.00,Pending,2023-09-15
+1023,Wendy Darling,22,34000.0,580,42.00,Active,2024-04-02

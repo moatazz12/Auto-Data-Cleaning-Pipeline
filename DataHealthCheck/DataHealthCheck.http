@@ -1,0 +1,6 @@
+@DataHealthCheck_HostAddress = http://localhost:5111
+
+GET {{DataHealthCheck_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

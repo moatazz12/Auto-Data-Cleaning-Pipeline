@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Force local NuGet config so builds do not depend on a blocked user-profile file. -->
+    <RestoreConfigFile>$(MSBuildThisFileDirectory)NuGet.Config</RestoreConfigFile>
+  </PropertyGroup>
+</Project>

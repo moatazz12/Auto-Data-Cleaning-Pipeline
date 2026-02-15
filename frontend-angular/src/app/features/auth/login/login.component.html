@@ -1,0 +1,56 @@
+<div class="auth-outer">
+  <div class="auth-wrapper">
+    <!-- PANEL 2 : Login Behavior (Form on Left visually, Text on Right visually) -->
+    <div class="auth-panel">
+
+      <!-- RIGHT SIDE (Form / White): Left physically due to DOM order -->
+      <div class="auth-right">
+        <div class="auth-card">
+          <h3>Welcome back</h3>
+
+          <div *ngIf="errorMessage" class="alert alert-danger py-2">
+            {{ errorMessage }}
+          </div>
+
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+            <div class="mb-3 text-start">
+              <label class="form-label">Username</label>
+              <input class="form-control" formControlName="userName"
+                [class.is-invalid]="loginForm.get('userName')?.invalid && loginForm.get('userName')?.touched" />
+              <small class="validation-error"
+                *ngIf="loginForm.get('userName')?.invalid && loginForm.get('userName')?.touched">Username is
+                required.</small>
+            </div>
+
+            <div class="mb-3 text-start">
+              <label class="form-label">Password</label>
+              <input type="password" class="form-control" formControlName="password"
+                [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" />
+              <small class="validation-error"
+                *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">Password is
+                required.</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-2" [disabled]="loginForm.invalid || isLoading">
+              <span *ngIf="!isLoading" style="display:flex;align-items:center;justify-content:center;gap:8px">
+                <span class="material-symbols-rounded sz-18">login</span>
+                Log in
+              </span>
+              <span *ngIf="isLoading" class="spinner-border spinner-border-sm"></span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- LEFT SIDE (Purple Text): Right physically due to DOM order -->
+      <div class="auth-left">
+        <h1>Hello!</h1>
+        <p>Don't have an account yet?</p>
+        <button class="btn btn-outline-light" routerLink="/register">
+          Sign up
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

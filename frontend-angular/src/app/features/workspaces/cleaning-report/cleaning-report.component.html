@@ -1,0 +1,314 @@
+<div class="report-page">
+    <div class="report-container">
+        <div class="loading-state" *ngIf="isLoading">
+            <div class="spinner-large"></div>
+            <p>Loading cleaning report...</p>
+        </div>
+
+        <div class="error-state" *ngIf="!isLoading && !cleanedDataset">
+            <div class="error-icon">
+                <span class="material-symbols-rounded sz-32">warning</span>
+            </div>
+            <h2>Report not found</h2>
+            <p>The cleaning report you're looking for doesn't exist.</p>
+            <button class="btn btn-primary" (click)="goBack()">Go Back</button>
+        </div>
+
+        <ng-container *ngIf="!isLoading && cleanedDataset">
+            <header class="report-header">
+                <div class="header-content">
+                    <button class="back-btn" (click)="goBack()" aria-label="Back">
+                        <span class="material-symbols-rounded sz-18">arrow_back</span>
+                        <span>Back</span>
+                    </button>
+                    <div class="header-info">
+                        <h1 class="hero-title">
+                            <span class="greeting">Cleaning Report</span>
+                            <span class="material-symbols-rounded sz-32"
+                                style="color: #4f46e5; font-variation-settings: 'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 32;">monitoring</span>
+                        </h1>
+                        <p class="subtitle">{{ cleanedDataset.name }}</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="download-csv-btn" (click)="downloadCleanedCsv()" [disabled]="isDownloadingCsv"
+                            aria-label="Download cleaned CSV" title="Download Cleaned CSV">
+                            <span class="material-symbols-rounded sz-18" style="margin-right:4px">download</span>
+                            <span class="download-text">{{ isDownloadingCsv ? "Downloading..." : "Download CSV"
+                                }}</span>
+                        </button>
+                        <button class="download-pdf-btn" (click)="downloadReportPDF()" [disabled]="isGeneratingPDF"
+                            aria-label="Download PDF report" title="Download PDF Report">
+                            <span class="material-symbols-rounded sz-18" style="margin-right:4px">picture_as_pdf</span>
+                            <span class="download-text">{{ isGeneratingPDF ? "Generating..." : "Download PDF" }}</span>
+                        </button>
+                        <button class="ghost-btn" (click)="confirmDelete()"
+                            [disabled]="!canWriteComment() || isDeleting" aria-label="Delete report"
+                            style="border: none; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted);">
+                            <span class="material-symbols-rounded">delete</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="report-content">
+                <!-- Summary Cards -->
+                <section class="summary-section">
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <div class="card-icon original">
+                                <span class="material-symbols-rounded"
+                                    style="font-variation-settings:'FILL' 1">bar_chart</span>
+                            </div>
+                            <div class="card-content">
+                                <div class="card-label">Original Rows</div>
+                                <div class="card-value">{{ stats?.originalRowCount || 0 }}</div>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="card-icon cleaned">
+                                <span class="material-symbols-rounded"
+                                    style="font-variation-settings:'FILL' 1">auto_awesome</span>
+                            </div>
+                            <div class="card-content">
+                                <div class="card-label">Cleaned Rows</div>
+                                <div class="card-value">{{ cleanedDataset.rowsCount }}</div>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="card-icon columns">
+                                <span class="material-symbols-rounded"
+                                    style="font-variation-settings:'FILL' 1">view_column</span>
+                            </div>
+                            <div class="card-content">
+                                <div class="card-label">Columns</div>
+                                <div class="card-value">{{ cleanedDataset.columnsCount }}</div>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="card-icon date">
+                                <span class="material-symbols-rounded"
+                                    style="font-variation-settings:'FILL' 1">calendar_today</span>
+                            </div>
+                            <div class="card-content">
+                                <div class="card-label">Cleaned At</div>
+                                <div class="card-value">{{ cleanedDataset.cleanedAt | date:'dd/MM/yyyy HH:mm' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Cleaning Operations -->
+                <section class="operations-section" *ngIf="cleanedDataset.cleaningOperations?.trim()">
+                    <h2 class="section-title">
+                        <span class="material-symbols-rounded" style="color:#6366f1;margin-right:8px">build</span>
+                        Cleaning Operations
+                    </h2>
+                    <div class="operations-stats-list">
+                        <div class="stat-row">
+                            <span class="stat-key">MissingImputation:</span>
+                            <span class="stat-number">{{ getOperationCount("MissingImputation") }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-key">DuplicatesRemoved:</span>
+                            <span class="stat-number">{{ getOperationCount("DuplicatesRemoved") }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-key">OutliersHandled:</span>
+                            <span class="stat-number">{{ getOperationCount("OutliersHandled") }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-key">FormatIssuesFixed:</span>
+                            <span class="stat-number">{{ getOperationCount("FormatIssuesFixed") }}</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Statistics -->
+                <section class="stats-section" *ngIf="stats">
+                    <h2 class="section-title">
+                        <span class="material-symbols-rounded" style="color:#6366f1;margin-right:8px">query_stats</span>
+                        Cleaning Statistics
+                    </h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Missing Values Imputed</div>
+                            <div class="stat-value">{{ stats.totalMissingImputed }}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Duplicates Removed</div>
+                            <div class="stat-value">{{ stats.totalDuplicatesRemoved }}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Outliers Handled</div>
+                            <div class="stat-value">{{ stats.totalOutliersHandled }}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Format Issues Fixed</div>
+                            <div class="stat-value">{{ stats.totalFormatIssuesFixed }}</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Data Quality Metrics (After Cleaning) -->
+                <section class="metrics-section" *ngIf="metrics.length > 0">
+                    <h2 class="section-title">
+                        <span class="material-symbols-rounded"
+                            style="color:#6366f1;margin-right:8px">center_focus_strong</span>
+                        Data Quality Metrics (After Cleaning)
+                    </h2>
+                    <div class="metrics-table-wrapper">
+                        <table class="metrics-table">
+                            <thead>
+                                <tr>
+                                    <th>Column</th>
+                                    <th>Type</th>
+                                    <th>Total Values</th>
+                                    <th>Missing</th>
+                                    <th>Unique</th>
+                                    <th>Duplicates</th>
+                                    <th>Quality Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let metric of metrics">
+                                    <td><strong>{{ metric.columnName }}</strong></td>
+                                    <td><span class="badge badge-type">{{ metric.dataType }}</span></td>
+                                    <td>{{ metric.totalValues }}</td>
+                                    <td>
+                                        <span class="badge"
+                                            [ngClass]="metric.missingValues > 0 ? 'badge-warning' : 'badge-success'">
+                                            {{ metric.missingValues > 0 ? metric.missingValues : 0 }}
+                                        </span>
+                                    </td>
+                                    <td>{{ metric.uniqueValues }}</td>
+                                    <td>
+                                        <span class="badge"
+                                            [ngClass]="metric.duplicateValues > 0 ? 'badge-warning' : 'badge-success'">
+                                            {{ metric.duplicateValues > 0 ? metric.duplicateValues : 0 }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="quality-score">
+                                            <div class="score-bar">
+                                                <div class="score-fill" [style.width.%]="(metric.qualityScore * 100)">
+                                                </div>
+                                            </div>
+                                            <span class="score-value">{{ metric.qualityScore | percent:'1.0-0' }}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="metrics-section" *ngIf="metrics.length === 0 && !isLoadingMetrics">
+                    <div class="empty-metrics">
+                        <p>No quality metrics available. Would you like to analyze this dataset?</p>
+                        <button class="btn btn-primary" (click)="analyzeDataset()"
+                            [disabled]="isAnalyzing || !canWriteComment()">
+                            {{ isAnalyzing ? "Analyzing..." : "Analyze Dataset" }}
+                        </button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Comments Section - Fixed bottom right -->
+            <div class="comments-container">
+                <button class="comments-toggle-btn" (click)="toggleComments()" aria-label="Toggle comments">
+                    <span class="material-symbols-rounded" style="margin-right:8px">forum</span>
+                    <span class="comments-label">Comments</span>
+                    <span class="comments-badge" *ngIf="commentsCount > 0">{{ commentsCount }}</span>
+                </button>
+
+                <div class="comments-panel" *ngIf="showComments">
+                    <div class="comments-header">
+                        <h3>Comments</h3>
+                        <button class="close-btn" (click)="toggleComments()" aria-label="Close comments">
+                            <span class="material-symbols-rounded sz-18">close</span>
+                        </button>
+                    </div>
+                    <div class="comments-list">
+                        <div class="comments-loading" *ngIf="isLoadingComments">Loading comments...</div>
+
+                        <ng-container *ngIf="!isLoadingComments && comments.length > 0">
+                            <div class="comment-item" *ngFor="let comment of comments">
+                                <div class="comment-header">
+                                    <span class="comment-author">{{ getCommentAuthor(comment.userId) }}</span>
+                                    <span class="comment-date">{{ comment.dateCreation | date:'dd/MM/yyyy HH:mm'
+                                        }}</span>
+                                </div>
+                                <div class="comment-content">{{ comment.contenu }}</div>
+                                <div class="comment-actions" *ngIf="canEditComment(comment)">
+                                    <button class="comment-action-btn" (click)="startEditComment(comment)">Edit</button>
+                                    <button class="comment-action-btn delete"
+                                        (click)="deleteComment(comment.id)">Delete</button>
+                                </div>
+                            </div>
+                        </ng-container>
+
+                        <div class="comments-empty" *ngIf="!isLoadingComments && comments.length === 0">No comments yet.
+                        </div>
+                    </div>
+
+                    <div class="comments-input">
+                        <ng-container *ngIf="!editingComment">
+                            <textarea class="comment-textarea" [(ngModel)]="newCommentText"
+                                [placeholder]="canWriteComment() ? 'Write a comment...' : 'You need Editor or Owner permissions to write comments.'"
+                                rows="3" [disabled]="!canWriteComment()"></textarea>
+                            <button class="comment-submit-btn" (click)="addComment()"
+                                [disabled]="!canWriteComment() || !newCommentText.trim() || isSubmittingComment">
+                                {{ isSubmittingComment ? "Posting..." : "Post Comment" }}
+                            </button>
+                        </ng-container>
+
+                        <ng-container *ngIf="editingComment">
+                            <textarea class="comment-textarea" [(ngModel)]="editingCommentText"
+                                placeholder="Edit comment..." rows="3" [disabled]="!canWriteComment()"></textarea>
+                            <div class="comment-edit-actions">
+                                <button class="comment-submit-btn" (click)="saveEditComment()"
+                                    [disabled]="!canWriteComment() || !editingCommentText.trim() || isSubmittingComment">
+                                    {{ isSubmittingComment ? "Saving..." : "Save" }}
+                                </button>
+                                <button class="comment-cancel-btn" (click)="cancelEditComment()">Cancel</button>
+                            </div>
+                        </ng-container>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Modal -->
+            <div class="modal-overlay modern-modal" *ngIf="showDeleteModal" (click)="cancelDelete()">
+                <div class="modal-content modern-modal-content" (click)="$event.stopPropagation()">
+                    <div class="modern-modal-header">
+                        <div class="modal-icon delete-icon">
+                            <span class="material-symbols-rounded sz-28"
+                                style="color:#fff;font-variation-settings:'FILL' 1,'wght' 600">delete_forever</span>
+                        </div>
+                        <div>
+                            <h2>Delete Cleaning Report</h2>
+                            <p class="modal-subtitle">This action cannot be undone</p>
+                        </div>
+                        <button class="modal-close" (click)="cancelDelete()" aria-label="Close">
+                            <span class="material-symbols-rounded sz-18">close</span>
+                        </button>
+                    </div>
+                    <div class="modern-modal-body">
+                        <p class="warning-text">
+                            Are you sure you want to delete this cleaning report? All associated data will be
+                            permanently removed.
+                        </p>
+                    </div>
+                    <div class="modern-modal-footer">
+                        <button class="btn btn-secondary" (click)="cancelDelete()"
+                            [disabled]="isDeleting">Cancel</button>
+                        <button class="btn btn-danger" (click)="deleteReport()" [disabled]="isDeleting">
+                            <span *ngIf="isDeleting">Deleting...</span>
+                            <span *ngIf="!isDeleting">Delete Report</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </ng-container>
+    </div>
+</div>
